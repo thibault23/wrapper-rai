@@ -2,4 +2,10 @@ node_modules
 
 #Hardhat files
 cache
-artifacts
+artifacts/*
+coverage
+.vscode
+coverage.json
+typechain
+*.dbg.json
+.env
