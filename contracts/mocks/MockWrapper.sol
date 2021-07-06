@@ -2,23 +2,19 @@
 
 pragma solidity ^0.8.0;
 
-import "./WERC20.sol";
-import "./interfaces/IOracleRelayer.sol";
+import "../WERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract Wrapper is WERC20 {
+contract MockWrapper is WERC20 {
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
-    IERC20 public rai;
-    IOracleRelayer public oracle;
     uint256 public redemptionPrice;
 
-    constructor (string memory name_, string memory symbol_, address _rai, address _oracle) 
+    constructor (string memory name_, string memory symbol_, uint256 value) 
          WERC20 (name_, symbol_) {
-             rai = IERC20(_rai);
-             oracle = IOracleRelayer(_oracle);
+            updateRedemptionPrice(value);
     }
 
     function applyPrice(uint256 amount, bool operation) public view returns (uint256) {
@@ -48,8 +44,6 @@ contract Wrapper is WERC20 {
      */
     function mint(address account, uint amount) external {
         require(account != address(0), "Mint to the zero address");
-        updateRedemptionPrice();
-        rai.transferFrom(msg.sender, address(this), amount);
         _mint(account, amount);
     }
 
@@ -62,11 +56,8 @@ contract Wrapper is WERC20 {
      */
     function burn(address account, uint amount) external {
         require(account != address(0), "Burn from the zero address");
-        updateRedemptionPrice();
         uint256 burnedAmount = applyPrice(amount, false);
         _burn(account, burnedAmount);
-        rai.transfer(msg.sender, burnedAmount);
-
     }
 
     /**
@@ -77,7 +68,6 @@ contract Wrapper is WERC20 {
         require(account != address(0), "Burn from the zero address");
         uint256 amount = balanceOfBase(account);
         _burn(account, amount);
-        rai.transfer(msg.sender, amount);
     }
 
     function getRedemptionPrice() public view returns (uint256) {
@@ -87,7 +77,7 @@ contract Wrapper is WERC20 {
     /**
      * @dev Updates the redemption price using the oracle, can be thought as the rebase event.
      */
-    function updateRedemptionPrice() public {
-        redemptionPrice = oracle.redemptionPrice();
+    function updateRedemptionPrice(uint256 value) public {
+        redemptionPrice = value;
     }
 }
