@@ -44,6 +44,7 @@ contract MockWrapper is WERC20 {
      */
     function mint(address account, uint amount) external {
         require(account != address(0), "Mint to the zero address");
+        require(amount > 0, "Amount is zero.");
         _mint(account, amount);
     }
 
@@ -56,6 +57,7 @@ contract MockWrapper is WERC20 {
      */
     function burn(address account, uint amount) external {
         require(account != address(0), "Burn from the zero address");
+        require(amount > 0, "Amount is zero.");
         uint256 burnedAmount = applyPrice(amount, false);
         _burn(account, burnedAmount);
     }

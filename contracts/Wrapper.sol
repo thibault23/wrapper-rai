@@ -7,6 +7,14 @@ import "./interfaces/IOracleRelayer.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+/**
+* @notice Rebasing token implementation of the RAI stablecoin.
+* The rebasing token relies on the redemption price to establish 
+* The underlying amount of tokens is referred to as the base while the rebased amount
+* can be referred to as the rebase (base * price).
+* So as to leave room for interoperability, we don't use msg.sender but rather keep
+* account as mint and burn parameters
+*/
 contract Wrapper is WERC20 {
 
     using SafeERC20 for IERC20;
@@ -48,8 +56,9 @@ contract Wrapper is WERC20 {
      */
     function mint(address account, uint amount) external {
         require(account != address(0), "Mint to the zero address");
+        require(amount > 0, "Amount is zero.");
         updateRedemptionPrice();
-        rai.transferFrom(msg.sender, address(this), amount);
+        rai.transferFrom(account, address(this), amount);
         _mint(account, amount);
     }
 
@@ -62,10 +71,11 @@ contract Wrapper is WERC20 {
      */
     function burn(address account, uint amount) external {
         require(account != address(0), "Burn from the zero address");
+        require(amount > 0, "Amount is zero.");
         updateRedemptionPrice();
         uint256 burnedAmount = applyPrice(amount, false);
         _burn(account, burnedAmount);
-        rai.transfer(msg.sender, burnedAmount);
+        rai.transfer(account, burnedAmount);
 
     }
 
@@ -77,7 +87,7 @@ contract Wrapper is WERC20 {
         require(account != address(0), "Burn from the zero address");
         uint256 amount = balanceOfBase(account);
         _burn(account, amount);
-        rai.transfer(msg.sender, amount);
+        rai.transfer(account, amount);
     }
 
     function getRedemptionPrice() public view returns (uint256) {
