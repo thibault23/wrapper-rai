@@ -83,6 +83,31 @@ contract MockWrapper is WERC20, Constants {
         _burn(account, amount);
     }
 
+    /**
+     * @dev Transfer tokens to an address
+     *      The rebased amount is used as one of the function parameters
+     * @param to The underlying address to send tokens to.
+     * @param amount The amount of rebased tokens to send in USD. 
+     */
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        uint256 transferAmount = applyPrice(amount, false);
+        _transfer(msg.sender, to, transferAmount);
+        return true;
+    }
+
+    /**
+     * @dev Transfer tokens from an address to an address
+     *      The rebased amount is used as one of the function parameters
+     * @param from The underlying address to send tokens from.
+     * @param to The underlying address to send tokens to.
+     * @param amount The amount of rebased tokens to send in USD. 
+     */
+    function transferFrom(address from, address to, uint256 amount) public override returns (bool){
+        uint256 transferAmount = applyPrice(amount, false);
+        super.transferFrom(from, to, transferAmount);
+        return true;
+    }
+
     function getRedemptionPrice() public view returns (uint256) {
         return redemptionPrice;
     }

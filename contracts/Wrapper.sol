@@ -16,6 +16,7 @@ import "./common/Constants.sol";
 * can be referred to as the rebase (base * price).
 * So as to leave room for interoperability, we don't use msg.sender but rather keep
 * account as mint and burn parameters
+* The redemption price will always have to be updated before any operation (burn, mint, transfer)
 */
 contract Wrapper is WERC20, Constants {
     uint256 public constant BASE = DEFAULT_DECIMALS_FACTOR;
@@ -108,6 +109,7 @@ contract Wrapper is WERC20, Constants {
      * @param amount The amount of rebased tokens to send in USD. 
      */
     function transfer(address to, uint256 amount) public override returns (bool) {
+        updateRedemptionPrice();
         uint256 transferAmount = applyPrice(amount, false);
         _transfer(msg.sender, to, transferAmount);
         return true;
@@ -121,6 +123,7 @@ contract Wrapper is WERC20, Constants {
      * @param amount The amount of rebased tokens to send in USD. 
      */
     function transferFrom(address from, address to, uint256 amount) public override returns (bool){
+        updateRedemptionPrice();
         uint256 transferAmount = applyPrice(amount, false);
         super.transferFrom(from, to, transferAmount);
         return true;
@@ -131,7 +134,7 @@ contract Wrapper is WERC20, Constants {
     }
 
     /**
-     * @dev Updates the redemption price using the oracle, can be thought as the rebase event.
+     * @dev Updates the redemption price using the oracle, can be thought of as the rebase event.
      */
     function updateRedemptionPrice() public {
         redemptionPrice = oracle.redemptionPrice();
