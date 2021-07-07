@@ -67,7 +67,97 @@ describe("Wrapping flow", function () {
 
         it('should fetch balances', async function() {
             const balance = await rai.connect(raiWhale).balanceOf(constants.raiWhaleAddress);
-            console.log("price is", balance.toString());
+            console.log("balance is", balance.toString());
         })
+    });
+
+    describe('update', function () {
+
+        before(async function () {
+            //reset the fork to a later block
+            await hre.network.provider.request({
+                method: "hardhat_reset",
+                params: [
+                {
+                    forking: {
+                    jsonRpcUrl: hre.network.config.forking.url,
+                    blockNumber: 12722000,
+                    },
+                },
+                ],
+            });
+        });
+
+        it('observe changes from the chain', async function() {
+
+            const price = await wrapper.connect(manager).getRedemptionPrice();
+            //result given in ray (27 decimals);
+            console.log("price is", price.toString());
+
+            const balance = await rai.connect(raiWhale).balanceOf(constants.raiWhaleAddress);
+            console.log("balance is", balance.toString());
+        });
+
+    });
+
+
+    describe('mint', function () {
+        it('can mint some wrapped rai', async function() {
+            await rai.connect(raiWhale).approve(wrapper.address, ethers.utils.parseUnits('5000', 18));
+            await wrapper.connect(raiWhale).mint(constants.raiWhaleAddress, ethers.utils.parseUnits('5000', 18));
+
+            const balance = await wrapper.balanceOf(constants.raiWhaleAddress);
+            //as price is given in RAY, we should get a 27 digit number preceded by 15k~
+            console.log("balance of rai whale is:", balance.toString());
+
+            const balanceBase = await wrapper.balanceOfBase(constants.raiWhaleAddress);
+            expect(balanceBase).to.be.equal(ethers.utils.parseUnits('5000', 18));
+        });
+        
+
+        it("should update redemption price", async function() {
+
+             const priceBefore = await wrapper.connect(manager).getRedemptionPrice();
+             console.log("price is", priceBefore.toString());
+             await rai.connect(raiWhale).approve(wrapper.address, ethers.utils.parseUnits('5000', 18));
+             await wrapper.connect(raiWhale).mint(constants.raiWhaleAddress, ethers.utils.parseUnits('5000', 18));
+
+             const priceAfter = await wrapper.connect(manager).getRedemptionPrice();
+             console.log("price is", priceAfter.toString());
+
+             return expect(priceBefore).to.not.be.equal(priceAfter);
+        });
+
+    });
+
+    describe('burn', function () {
+
+        it('can burn all', async function() {
+            await rai.connect(raiWhale).approve(wrapper.address, ethers.utils.parseUnits('5000', 18));
+            await wrapper.connect(raiWhale).mint(constants.raiWhaleAddress, ethers.utils.parseUnits('5000', 18));
+
+            await wrapper.connect(raiWhale).burnAll(constants.raiWhaleAddress);
+
+            expect((await wrapper.connect(raiWhale).totalSupplyBase()).toString()).to.be.equal(ethers.utils.parseUnits('0', 18));
+            return expect((await wrapper.balanceOfBase(constants.raiWhaleAddress)).toString())
+                .to.be.equal(ethers.utils.parseUnits('0', 18));
+        });
+   
+    });
+
+    describe('transfer', function () {
+
+        it('should fetch redemption price', async function() {
+            
+        });
+   
+    });
+
+    describe('reflexer', function () {
+
+        it('should fetch redemption price', async function() {
+            
+        });
+   
     });
 });
