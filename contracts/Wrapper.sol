@@ -32,6 +32,7 @@ contract Wrapper is WERC20, Constants {
          WERC20 (name_, symbol_) {
              rai = IERC20(_rai);
              oracle = IOracleRelayer(_oracle);
+             updateRedemptionPrice();
     }
 
     function applyPrice(uint256 amount, bool operation) internal view returns (uint256 resultant) {
