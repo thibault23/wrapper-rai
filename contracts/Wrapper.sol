@@ -63,7 +63,7 @@ contract Wrapper is WERC20, Constants {
      * @dev Mints tokens to an address
      *      As wrapped tokens are pegged 1:1 with RAI, amount is also equivalent to the amount of RAI
      * @param account The underlying address to mint wrapped tokens to.
-     * @param amount The amount of wrapped tokens to mint. 
+     * @param amount The amount of wrapped tokens to mint (1:1 in RAI). 
      */
     function mint(address account, uint amount) external {
         require(account != address(0), "Mint to the zero address");
@@ -78,7 +78,7 @@ contract Wrapper is WERC20, Constants {
      *      The rebased amount is used as one of the function parameters
      *      If account has 3 RAI, redemption price is 2 and amount is 4, the underlying amount of RAI to actually burn is 2
      * @param account The underlying address to burn tokens from.
-     * @param amount The amount of rebased tokens to burn. 
+     * @param amount The amount of rebased tokens to burn in USD. 
      */
     function burn(address account, uint amount) external {
         require(account != address(0), "Burn from the zero address");
@@ -99,6 +99,31 @@ contract Wrapper is WERC20, Constants {
         uint256 amount = balanceOfBase(account);
         _burn(account, amount);
         rai.transfer(account, amount);
+    }
+
+    /**
+     * @dev Transfer tokens to an address
+     *      The rebased amount is used as one of the function parameters
+     * @param to The underlying address to send tokens to.
+     * @param amount The amount of rebased tokens to send in USD. 
+     */
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        uint256 transferAmount = applyPrice(amount, false);
+        _transfer(msg.sender, to, transferAmount);
+        return true;
+    }
+
+    /**
+     * @dev Transfer tokens from an address to an address
+     *      The rebased amount is used as one of the function parameters
+     * @param from The underlying address to send tokens from.
+     * @param to The underlying address to send tokens to.
+     * @param amount The amount of rebased tokens to send in USD. 
+     */
+    function transferFrom(address from, address to, uint256 amount) public override returns (bool){
+        uint256 transferAmount = applyPrice(amount, false);
+        super.transferFrom(from, to, transferAmount);
+        return true;
     }
 
     function getRedemptionPrice() public view returns (uint256) {
