@@ -6,6 +6,8 @@ import "./WERC20.sol";
 import "./interfaces/IOracleRelayer.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "contracts/libraries/WadRayMath.sol";
+import "./common/Constants.sol";
 
 /**
 * @notice Rebasing token implementation of the RAI stablecoin.
@@ -15,10 +17,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 * So as to leave room for interoperability, we don't use msg.sender but rather keep
 * account as mint and burn parameters
 */
-contract Wrapper is WERC20 {
+contract Wrapper is WERC20, Constants {
+    uint256 public constant BASE = DEFAULT_DECIMALS_FACTOR;
 
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
+    using WadRayMath for uint256;
     IERC20 public rai;
     IOracleRelayer public oracle;
     uint256 public redemptionPrice;
@@ -29,11 +33,18 @@ contract Wrapper is WERC20 {
              oracle = IOracleRelayer(_oracle);
     }
 
-    function applyPrice(uint256 amount, bool operation) public view returns (uint256) {
+    function applyPrice(uint256 amount, bool operation) internal view returns (uint256 resultant) {
+        uint256 _BASE = BASE;
+        uint256 diff;
         if(operation) {
-            return amount.mul(redemptionPrice);
+            diff = amount.mul(redemptionPrice) % _BASE;
+            resultant = amount.mul(redemptionPrice).div(_BASE);
         } else {
-            return amount.div(redemptionPrice);
+            diff = amount.mul(_BASE) % redemptionPrice;
+            resultant = amount.mul(_BASE).div(redemptionPrice);
+        }
+        if (diff >= 5E17) {
+            resultant = resultant.add(1);
         }
     }
    
