@@ -14,7 +14,7 @@ describe("Wrapper", function () {
         return signer;
     };
 
-    let accounts: Signer[], deployer: Signer, minter: Signer, minter2: Signer, minter3: Signer, manager: Signer;
+    let accounts: Signer[], deployer: Signer, minter: Signer, minter2: Signer, minter3: Signer, manager: Signer, zeroAddress: Signer;
 
     let wrapper : Contract;
 
@@ -34,6 +34,7 @@ describe("Wrapper", function () {
         minter2 = accounts[2];
         minter3 = accounts[3];
         manager = accounts[4];
+        zeroAddress = await impersonateAddress(constants.ZERO_ADDRESS);
         await wrapper.connect(minter).mint(await minter.getAddress(), ethers.utils.parseUnits('500', 18));
     });
 
@@ -176,15 +177,159 @@ describe("Wrapper", function () {
     });
 
     describe('transfers', function () {
+        it('should transfer and verify balances', async function() {
+            //minter has 1500 USD worth of RAI (redemption price of 3)
+            await wrapper.connect(minter).transfer(minter2.getAddress(), ethers.utils.parseUnits('300', 18));
 
+            expect((await wrapper.balanceOf(minter.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('1200', 18));
+
+            expect((await wrapper.balanceOf(minter2.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('300', 18));
+
+            expect((await wrapper.balanceOfBase(minter.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('400', 18));
+
+            expect((await wrapper.balanceOfBase(minter2.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('100', 18));
+        });
+
+        it('should be correct when transferring after price increases', async function() {
+            await wrapper.connect(manager).updateRedemptionPrice(ethers.utils.parseUnits('6', 18));
+
+            await wrapper.connect(minter).transfer(minter2.getAddress(), ethers.utils.parseUnits('300', 18));
+
+            expect((await wrapper.balanceOf(minter.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('2700', 18));
+
+            expect((await wrapper.balanceOf(minter2.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('300', 18));
+
+            expect((await wrapper.balanceOfBase(minter.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('450', 18));
+
+            expect((await wrapper.balanceOfBase(minter2.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('50', 18));
+        });
+
+        it('should be correct when transferring all tokens', async function() {
+            await wrapper.connect(manager).updateRedemptionPrice(ethers.utils.parseUnits('6', 18));
+
+            await wrapper.connect(minter).transfer(minter2.getAddress(), ethers.utils.parseUnits('3000', 18));
+
+            expect((await wrapper.balanceOf(minter.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('0', 18));
+
+            expect((await wrapper.balanceOf(minter2.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('3000', 18));
+
+            expect((await wrapper.balanceOfBase(minter.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('0', 18));
+
+            expect((await wrapper.balanceOfBase(minter2.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('500', 18));
+        });
+        
+        it('should revert when not enough balance', async function() {
+            return expect(wrapper.connect(minter).transfer(minter2.getAddress(), ethers.utils.parseUnits('2000', 18)))
+                .to.be.revertedWith("ERC20: transfer amount exceeds balance");
+        });
+
+        it('should revert when transferring to the zero address', async function() {
+            return expect(wrapper.connect(minter).transfer(constants.ZERO_ADDRESS, ethers.utils.parseUnits('2000', 18)))
+                .to.be.revertedWith("ERC20: transfer to the zero address");
+        });
     });
 
     describe('transferFrom', function () {
+        it('should revert when not enough balance', async function() {
+            return expect(wrapper.connect(minter).transferFrom(minter.getAddress(), minter2.getAddress(), ethers.utils.parseUnits('2000', 18)))
+                .to.be.revertedWith("ERC20: transfer amount exceeds balance");
+        });
 
-    });
+        it('should revert when transferring to the zero address', async function() {
+            return expect(wrapper.connect(minter).transferFrom(minter.getAddress(), constants.ZERO_ADDRESS, ethers.utils.parseUnits('2000', 18)))
+                .to.be.revertedWith("ERC20: transfer to the zero address");
+        });
 
-    describe('rebase event', function () {
+        it('should revert when transferring from the zero address', async function() {
+            return expect(wrapper.connect(minter).transferFrom(constants.ZERO_ADDRESS, minter2.getAddress(), ethers.utils.parseUnits('2000', 18)))
+                .to.be.revertedWith("ERC20: transfer from the zero address");
+        });
 
+        it('should transfer correctly', async function() {
+            await wrapper.connect(minter).approve(minter.getAddress(), ethers.utils.parseUnits('300', 18))
+            await wrapper.connect(minter).transferFrom(minter.getAddress(), minter2.getAddress(), ethers.utils.parseUnits('300', 18));
+
+            expect((await wrapper.balanceOf(minter.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('1200', 18));
+
+            expect((await wrapper.balanceOf(minter2.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('300', 18));
+        });
+
+        it('should be correct after a price increase', async function() {
+            await wrapper.connect(manager).updateRedemptionPrice(ethers.utils.parseUnits('10', 18));
+            await wrapper.connect(minter).approve(minter.getAddress(), ethers.utils.parseUnits('300', 18))
+            await wrapper.connect(minter).transferFrom(minter.getAddress(), minter2.getAddress(), ethers.utils.parseUnits('300', 18));
+
+            expect((await wrapper.balanceOf(minter.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('4700', 18));
+
+            expect((await wrapper.balanceOf(minter2.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('300', 18));
+        });
+
+        it('should be correct before a price increase', async function() {
+            await wrapper.connect(minter).approve(minter.getAddress(), ethers.utils.parseUnits('300', 18));
+            await wrapper.connect(minter).transferFrom(minter.getAddress(), minter2.getAddress(), ethers.utils.parseUnits('300', 18));
+            await wrapper.connect(manager).updateRedemptionPrice(ethers.utils.parseUnits('10', 18));
+
+            expect((await wrapper.balanceOf(minter.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('4000', 18));
+
+            expect((await wrapper.balanceOf(minter2.getAddress())))
+                .to.be.equal(ethers.utils.parseUnits('1000', 18));
+        });
+
+        it('should revert when approving from the zero address', async function() {
+            return expect(wrapper.connect(zeroAddress).approve(minter.getAddress(), ethers.utils.parseUnits('300', 18)))
+                .to.be.revertedWith('ERC20: approve from the zero address');
+        });
+
+        it('should revert when approving the zero address', async function() {
+            return expect(wrapper.connect(minter).approve(zeroAddress.getAddress(), ethers.utils.parseUnits('300', 18)))
+                .to.be.revertedWith('ERC20: approve to the zero address');
+        });
+
+        it('should revert when exceeding allowance', async function() {
+            //to recall that the approval is regarding the underlying token (RAI or WrappedRai)
+            await wrapper.connect(minter).approve(minter2.getAddress(), ethers.utils.parseUnits('300', 18));
+            await wrapper.connect(minter2).transferFrom(minter.getAddress(), minter3.getAddress(), ethers.utils.parseUnits('900', 18));
+
+            const allowance = await wrapper.connect(minter).allowance(minter.getAddress(), minter2.getAddress());
+            console.log("allowances:", allowance.toString());
+            return expect(wrapper.connect(minter2).transferFrom(minter.getAddress(), minter3.getAddress(), ethers.utils.parseUnits('1', 18)))
+                .to.be.revertedWith("ERC20: transfer amount exceeds allowance");
+        });
+
+        it('should revert when exceeding allowance due to rebasing event', async function() {
+            await wrapper.connect(minter).approve(minter2.getAddress(), ethers.utils.parseUnits('300', 18));
+            //at this stage 300 wrapped RAI is approved i.e. 900 rebased rai at current prices
+
+            await wrapper.connect(manager).updateRedemptionPrice(ethers.utils.parseUnits('10', 18));
+            //1 wrapped rai is now 10 rebased rai and should be able to transfer 3000 rebased rai
+
+            var allowance = await wrapper.connect(minter).allowance(minter.getAddress(), minter2.getAddress());
+            expect(allowance).to.be.equal(ethers.utils.parseUnits('300', 18));
+
+            await wrapper.connect(minter2).transferFrom(minter.getAddress(), minter3.getAddress(), ethers.utils.parseUnits('3000', 18));
+            allowance = await wrapper.connect(minter).allowance(minter.getAddress(), minter2.getAddress());
+            expect(allowance).to.be.equal(ethers.utils.parseUnits('0', 18));
+
+            return expect(wrapper.connect(minter2).transferFrom(minter.getAddress(), minter3.getAddress(), ethers.utils.parseUnits('1', 18)))
+                .to.be.revertedWith("ERC20: transfer amount exceeds allowance");
+        });
     });
 
 });
