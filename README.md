@@ -1,1 +1,31 @@
 # wrapper-rai
+
+## Overiew
+
+This implementation covers a rebase mechanisme for RAI. As we know, RAI is stablecoin non pegged to the USD.
+Its stability is currently around 3 USD but it aims not to have a fixed peg dependant on the US dollar. As such, its peg can be quite counterintuitive for users whose mindset is still attached to fiat currencies. This repo implements a rebase mechanism alongside the redemption price of RAI. A user can mints wrapped RAI by transferring RAI to the contract. Each wrapped RAI is then converted into rebase tokens by using the redemption price of RAI. If a user deposits 2 RAI to the contract and the current RAI redemption price is 3, the user balance will be 6.
+If the peg changes to 4, user balance will be updated to 8.
+
+## Implementation
+
+I extended the ERC20 standard and changed balanceOf and totalSupply mechanisms to include a rebase mechanism where balances are obtained with a simple multiplication or division between the balance of RAI (or wrapped RAI) and the RAI redemption price queried from the oracle relayer.
+
+## Testing
+
+Testing includes unit and integration testing which cover each basic functionnality of the contracts (including child and parent functions).
+
+The various tested functionnalities are mint, balance, burn, transfer, allowance, all.
+
+Reversion is also tested.
+
+Integration testing with the RAI token and the Oracle Relayer smart contract is also included.
+
+## Improvements
+
+This implementation does not cover a perfect continuous rebasing mechanism, meaning each block might not include the latest updated redemption price.
+
+This is because balanceOf is a view function and can't update the state during its execution. As such, each new balanceOf call might not have the latest redemption price updated. Nevertheless, all other token functionalities include a call to the update redemption price function so we can consider the rebased mechanism almost continuous.
+
+The above is still vulnerable to attacks in case long periods without minting, transferring, burning... occur.
+
+An external actor (such as a bot) could also be integration into the implementation by calling ``updateRedemptionPrice()``

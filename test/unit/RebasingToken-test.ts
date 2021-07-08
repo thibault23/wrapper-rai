@@ -87,7 +87,7 @@ describe("Wrapper", function () {
     });
 
     describe('burn', function () {
-        it('should burn tokens of an address', async function() {
+        it.only('should burn tokens of an address', async function() {
             console.log("redemption price is:", (await wrapper.getRedemptionPrice()).toString());
             const balanceBefore = await wrapper.balanceOf(await minter.getAddress());
             console.log("balance before:", balanceBefore.toString());
