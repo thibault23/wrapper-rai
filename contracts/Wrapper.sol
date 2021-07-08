@@ -17,6 +17,7 @@ import "./common/Constants.sol";
 * So as to leave room for interoperability, we don't use msg.sender but rather keep
 * account as mint and burn parameters
 * The redemption price will always have to be updated before any operation (burn, mint, transfer)
+* For burn and transfer operations, we always use the rebased amount (base*price) as input parameter
 */
 contract Wrapper is WERC20, Constants {
     uint256 public constant BASE = DEFAULT_DECIMALS_FACTOR;

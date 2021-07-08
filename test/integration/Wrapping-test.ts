@@ -147,6 +147,55 @@ describe("Wrapping flow", function () {
 
     describe('transfer', function () {
 
+        it('reverts if not enough balance', async function() {
+            expect(await wrapper.balanceOf(deployer.getAddress()))
+                .to.be.equal(0);
+
+            return expect(wrapper.connect(deployer).transfer(constants.raiWhaleAddress, 100))
+                .to.be.revertedWith('ERC20: transfer amount exceeds balance');
+        });
+
+        it.only('can transfer', async function() {
+            var redemptionPrice = await wrapper.connect(raiWhale).getRedemptionPrice();
+            console.log('current redemption price is', redemptionPrice.toString());
+
+            await rai.connect(raiWhale).approve(wrapper.address, ethers.utils.parseUnits('5000', 18));
+            await wrapper.connect(raiWhale).mint(constants.raiWhaleAddress, ethers.utils.parseUnits('5000', 18));
+            redemptionPrice = await wrapper.connect(raiWhale).getRedemptionPrice();
+            console.log('current redemption price is', redemptionPrice.toString());
+
+            await wrapper.connect(raiWhale).transfer(deployer.getAddress(), ethers.utils.parseUnits("10000", "18"));
+            redemptionPrice = await wrapper.connect(raiWhale).getRedemptionPrice();
+            console.log('current redemption price is', redemptionPrice.toString());
+
+            //we expect balanceOf to be slightly different than 10k as 
+            console.log("balance receiver", (await wrapper.balanceOf(deployer.getAddress())).toString());
+
+            await wrapper.connect(raiWhale).transfer(minter.getAddress(), ethers.utils.parseUnits("3000", "18"));
+            redemptionPrice = await wrapper.connect(raiWhale).getRedemptionPrice();
+            console.log('current redemption price is', redemptionPrice.toString());
+            console.log("balance receiver", (await wrapper.balanceOf(deployer.getAddress())).toString());
+
+            await wrapper.connect(deployer).transfer(minter.getAddress(), ethers.utils.parseUnits("10000", "18"));
+        });
+   
+    });
+
+    describe('balances', function () {
+
+        it('can get correct updated balances', async function() {
+            await rai.connect(raiWhale).approve(wrapper.address, ethers.utils.parseUnits('5000', 18));
+            await wrapper.connect(raiWhale).mint(constants.raiWhaleAddress, ethers.utils.parseUnits('5000', 18));
+
+            //const price = await wrapper.connect(raiWhale).getRedemptionPrice();
+            //const baseBalance
+            //expect(await wrapper.balance(raiWhale))
+        });
+   
+    });
+
+    describe('transferFrom', function () {
+
         it('should fetch redemption price', async function() {
             
         });
