@@ -120,8 +120,8 @@ contract Wrapper is WERC20, Constants {
 
     function transferAllAllowance(address from, address to) public returns (bool) {
         updateRedemptionPrice();
-        uint256 transferAmount = allowance(from, msg.sender);
-        _transfer(msg.sender, to, transferAmount);
+        uint256 transferAmount = super.allowance(from, msg.sender);
+        super.transferFrom(from, to, transferAmount);
         return true;
     }
 

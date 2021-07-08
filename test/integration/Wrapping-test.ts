@@ -25,6 +25,9 @@ describe("Wrapping flow", function () {
         raiWhaleAddress: '0xC680361E290D44aB0455375BB09C4aea58Bd9105'
     };
 
+    const Base = ethers.BigNumber.from(10).pow(18);
+    const BaseRay = ethers.BigNumber.from(10).pow(27);
+
     beforeEach(async function () {
         rai = await ethers.getContractAt("IERC20", "0x03ab458634910aad20ef5f1c8ee96f1d6ac54919");
         oracleRelayer = await ethers.getContractAt("IOracleRelayer", "0x4ed9C0dCa0479bC64d8f4EB3007126D5791f7851");
@@ -155,7 +158,7 @@ describe("Wrapping flow", function () {
                 .to.be.revertedWith('ERC20: transfer amount exceeds balance');
         });
 
-        it.only('can transfer', async function() {
+        it('can transfer', async function() {
             var redemptionPrice = await wrapper.connect(raiWhale).getRedemptionPrice();
             console.log('current redemption price is', redemptionPrice.toString());
 
@@ -187,17 +190,83 @@ describe("Wrapping flow", function () {
             await rai.connect(raiWhale).approve(wrapper.address, ethers.utils.parseUnits('5000', 18));
             await wrapper.connect(raiWhale).mint(constants.raiWhaleAddress, ethers.utils.parseUnits('5000', 18));
 
-            //const price = await wrapper.connect(raiWhale).getRedemptionPrice();
-            //const baseBalance
-            //expect(await wrapper.balance(raiWhale))
+            const balanceOfBaseBefore = await wrapper.connect(raiWhale).balanceOfBase(constants.raiWhaleAddress);
+            expect(balanceOfBaseBefore.toString())
+                .to.be.equal(ethers.utils.parseUnits('5000', 18));
+
+            /*
+            expect((await wrapper.connect(raiWhale).balanceOf(constants.raiWhaleAddress)).toString())
+                .to.be.equal(ethers.utils.parseUnits('5000', 18));
+            */
+            const price = await wrapper.connect(raiWhale).getRedemptionPrice();
+            const baseBalance = await wrapper.connect(raiWhale).balanceOfBase(constants.raiWhaleAddress);
+            const result = (price.mul(baseBalance)).div(BaseRay);
+            expect((await wrapper.connect(raiWhale).balanceOf(constants.raiWhaleAddress)).toString())
+                .to.be.equal(result);
+
+            await wrapper.connect(raiWhale).transferAll(manager.getAddress());
+            const balanceOfBaseAfter = await wrapper.connect(manager).balanceOfBase(manager.getAddress());
+            
+            const balanceMinter = await wrapper.connect(raiWhale).balanceOfBase(constants.raiWhaleAddress);
+            const balanceBaseMinter = await wrapper.connect(raiWhale).balanceOfBase(constants.raiWhaleAddress);
+
+            expect(balanceOfBaseBefore)
+                .to.be.equal(balanceOfBaseAfter);
+
+            expect(balanceMinter)
+                .to.be.equal(0);
+
+            expect(balanceBaseMinter)
+                .to.be.equal(0);
         });
    
     });
 
     describe('transferFrom', function () {
 
-        it('should fetch redemption price', async function() {
-            
+        it('can transferFrom', async function() {
+            await rai.connect(raiWhale).approve(wrapper.address, ethers.utils.parseUnits('5000', 18));
+            await wrapper.connect(raiWhale).mint(constants.raiWhaleAddress, ethers.utils.parseUnits('5000', 18));
+
+            // approval of about ~9k rebased RAI
+            await wrapper.connect(raiWhale).approve(minter.getAddress(), ethers.utils.parseUnits('3000', 18));
+
+            var redemptionPrice = await wrapper.connect(raiWhale).getRedemptionPrice();
+            console.log('current redemption price is', redemptionPrice.toString());
+
+            await wrapper.connect(minter)
+                .transferFrom(constants.raiWhaleAddress, manager.getAddress(), ethers.utils.parseUnits('8000', 18));
+
+            redemptionPrice = await wrapper.connect(raiWhale).getRedemptionPrice();
+            console.log('current redemption price is', redemptionPrice.toString());
+
+            redemptionPrice = await wrapper.connect(raiWhale).getRedemptionPrice();
+            console.log('current redemption price is', redemptionPrice.toString());
+
+            console.log("balance of manager is:", (await wrapper.balanceOf(manager.getAddress())).toString());
+
+            redemptionPrice = await wrapper.connect(raiWhale).getRedemptionPrice();
+            console.log('current redemption price is', redemptionPrice.toString());
+        });
+
+        it('reverts if exceeds allowance', async function() {
+            await rai.connect(raiWhale).approve(wrapper.address, ethers.utils.parseUnits('5000', 18));
+            await wrapper.connect(raiWhale).mint(constants.raiWhaleAddress, ethers.utils.parseUnits('5000', 18));
+
+            // approval of about ~9k rebased RAI
+            await wrapper.connect(raiWhale).approve(minter.getAddress(), ethers.utils.parseUnits('3000', 18));
+
+            var allowance = await wrapper.connect(raiWhale).allowance(constants.raiWhaleAddress, minter.getAddress());
+            console.log('allowance is', allowance.toString());
+
+            await wrapper.connect(minter).transferAllAllowance(constants.raiWhaleAddress, manager.getAddress());
+
+            allowance = await wrapper.connect(raiWhale).allowance(constants.raiWhaleAddress, minter.getAddress());
+            console.log('allowance is', allowance.toString());
+    
+            return expect(wrapper.connect(minter).transferFrom(constants.raiWhaleAddress, manager.getAddress(), ethers.utils.parseUnits('1', 18)))
+                .to.be.revertedWith('ERC20: transfer amount exceeds allowance');
+                
         });
    
     });
