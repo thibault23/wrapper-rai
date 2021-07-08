@@ -271,11 +271,4 @@ describe("Wrapping flow", function () {
    
     });
 
-    describe('reflexer', function () {
-
-        it('should fetch redemption price', async function() {
-            
-        });
-   
-    });
 });
