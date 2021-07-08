@@ -118,6 +118,13 @@ contract Wrapper is WERC20, Constants {
         return true;
     }
 
+    function transferAllAllowance(address from, address to) public returns (bool) {
+        updateRedemptionPrice();
+        uint256 transferAmount = allowance(from, msg.sender);
+        _transfer(msg.sender, to, transferAmount);
+        return true;
+    }
+
     /**
      * @dev Transfer tokens from an address to an address
      *      The rebased amount is used as one of the function parameters
