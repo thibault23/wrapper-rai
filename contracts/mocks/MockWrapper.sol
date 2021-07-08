@@ -33,8 +33,7 @@ contract MockWrapper is WERC20, Constants {
         }
         if (diff >= 5E17) {
             resultant = resultant.add(1);
-        }
-         
+        }   
     }
    
     function totalSupply() public view override returns (uint256) {

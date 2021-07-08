@@ -11,11 +11,11 @@ import "./common/Constants.sol";
 
 /**
 * @notice Rebasing token implementation of the RAI stablecoin.
-* The rebasing token relies on the redemption price to establish 
+* The rebasing token relies on the redemption price to establish the currency rate
 * The underlying amount of tokens is referred to as the base while the rebased amount
 * can be referred to as the rebase (base * price).
-* So as to leave room for interoperability, we don't use msg.sender but rather keep
-* account as mint and burn parameters
+* So as to leave room for interoperability, we don't use msg.sender but rather keep the
+* account address as mint and burn parameters
 * The redemption price will always have to be updated before any operation (burn, mint, transfer)
 * For burn and transfer operations, we always use the rebased amount (base*price) as input parameter
 */

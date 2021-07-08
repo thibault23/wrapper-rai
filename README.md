@@ -2,10 +2,10 @@
 
 ## Overiew
 
-This implementation covers a rebase mechanisme for RAI. As we know, RAI is stablecoin non pegged to the USD.
-Its stability is currently around 3 USD but it aims not to have a fixed peg dependant on the US dollar. As such, its peg can be quite counterintuitive for users whose mindset is still attached to fiat currencies. 
+This implementation covers a rebase mechanism for RAI. As we know, RAI is a stablecoin not pegged to the USD.
+Its stability is currently around 3 USD but it aims not to have a fixed peg, independant of the US dollar. As such, its peg can be quite counterintuitive for users whose mindset is still attached to fiat currencies. 
 
-This repo implements a rebase mechanism alongside the redemption price of RAI. A user can mints wrapped RAI by transferring RAI to the contract. Each wrapped RAI is then converted into rebase tokens by using the redemption price of RAI. If a user deposits 2 RAI to the contract and the current RAI redemption price is 3, the user balance will be 6. If the peg changes to 4, user balance will be updated to 8.
+This repo implements a rebase mechanism around the redemption price of RAI. A user can mint wrapped RAI by transferring RAI to the contract. Each wrapped RAI is then converted into rebase tokens by using the redemption price of RAI. If a user deposits 2 RAI to the contract and the current RAI redemption price is 3, the user balance will be 6. If the peg changes to 4, user balance will be updated to 8.
 
 ## Implementation
 
@@ -39,8 +39,8 @@ To run the tests:
 
 This implementation does not cover a perfect continuous rebasing mechanism, meaning each block might not include the latest updated redemption price.
 
-This is because balanceOf is a view function and can't update the state during its execution. As such, each new balanceOf call might not have the latest redemption price updated. Nevertheless, all other token functionalities include a call to the update redemption price function so we can consider the rebased mechanism almost continuous.
+This is because balanceOf is a view function and can't update the state during its execution. As such, each new balanceOf call might not have the latest redemption price updated. Nevertheless, all other token functionalities include a call to the update redemption price function so we can consider the rebasing mechanism almost continuous.
 
 The above is still vulnerable to attacks in case long periods without minting, transferring, burning... occur.
 
-An external actor (such as a bot) could also be integration into the implementation by calling ``updateRedemptionPrice()``
+An external actor (such as a bot) could also be integrated into the implementation and participate to the protocol by calling ``updateRedemptionPrice()`` frequently.
