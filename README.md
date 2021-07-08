@@ -13,6 +13,8 @@ I extended the ERC20 standard and updated balanceOf and totalSupply functions to
 
 Overall, all internal accounting is denominated in RAI but balanceOf and totalSupply which can be displayed to the user are denominated in rebased RAI.
 
+There is a ```transferAllAllowance``` function to facilitate transferring all approved tokens.
+
 To compile the contracts:
 
 ```npx hardhat compile```
@@ -24,6 +26,8 @@ Testing includes unit and integration testing which cover each basic functionnal
 The various tested functionnalities are mint, balance, burn, transfer, allowance, all.
 
 Reversion is also tested.
+
+Unit testing is done through a mock contract of the wrapper contract.
 
 Integration testing with the RAI token and the Oracle Relayer smart contract is also included.
 
