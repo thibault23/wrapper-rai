@@ -37,17 +37,11 @@ contract Wrapper is WERC20, Constants {
     }
 
     function applyPrice(uint256 amount, bool operation) internal view returns (uint256 resultant) {
-        uint256 _BASE = BASE;
-        uint256 diff;
+        //we keep 18 decimals for better arithmetic precision with the redemption price which has 27 decimals
         if(operation) {
-            diff = amount.mul(redemptionPrice) % _BASE;
-            resultant = amount.mul(redemptionPrice).div(_BASE);
+            resultant = amount.wadMul(redemptionPrice);
         } else {
-            diff = amount.mul(_BASE) % redemptionPrice;
-            resultant = amount.mul(_BASE).div(redemptionPrice);
-        }
-        if (diff >= 5E17) {
-            resultant = resultant.add(1);
+            resultant = amount.wadDiv(redemptionPrice);
         }
     }
    
