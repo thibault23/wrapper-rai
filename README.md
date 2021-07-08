@@ -3,22 +3,33 @@
 ## Overiew
 
 This implementation covers a rebase mechanisme for RAI. As we know, RAI is stablecoin non pegged to the USD.
-Its stability is currently around 3 USD but it aims not to have a fixed peg dependant on the US dollar. As such, its peg can be quite counterintuitive for users whose mindset is still attached to fiat currencies. This repo implements a rebase mechanism alongside the redemption price of RAI. A user can mints wrapped RAI by transferring RAI to the contract. Each wrapped RAI is then converted into rebase tokens by using the redemption price of RAI. If a user deposits 2 RAI to the contract and the current RAI redemption price is 3, the user balance will be 6.
-If the peg changes to 4, user balance will be updated to 8.
+Its stability is currently around 3 USD but it aims not to have a fixed peg dependant on the US dollar. As such, its peg can be quite counterintuitive for users whose mindset is still attached to fiat currencies. 
+
+This repo implements a rebase mechanism alongside the redemption price of RAI. A user can mints wrapped RAI by transferring RAI to the contract. Each wrapped RAI is then converted into rebase tokens by using the redemption price of RAI. If a user deposits 2 RAI to the contract and the current RAI redemption price is 3, the user balance will be 6. If the peg changes to 4, user balance will be updated to 8.
 
 ## Implementation
 
-I extended the ERC20 standard and changed balanceOf and totalSupply mechanisms to include a rebase mechanism where balances are obtained with a simple multiplication or division between the balance of RAI (or wrapped RAI) and the RAI redemption price queried from the oracle relayer.
+I extended the ERC20 standard and updated balanceOf and totalSupply functions to include a rebase mechanism where balances are obtained with a simple multiplication or division between the balance of RAI (or wrapped RAI) and the RAI redemption price queried from the oracle relayer.
+
+Overall, all internal accounting is denominated in RAI but balanceOf and totalSupply which can be displayed to the user are denominated in rebased RAI.
+
+To compile the contracts:
+
+```npx hardhat compile```
 
 ## Testing
 
-Testing includes unit and integration testing which cover each basic functionnality of the contracts (including child and parent functions).
+Testing includes unit and integration testing which cover each basic functionnality of the contracts (including child and parent contracts).
 
 The various tested functionnalities are mint, balance, burn, transfer, allowance, all.
 
 Reversion is also tested.
 
 Integration testing with the RAI token and the Oracle Relayer smart contract is also included.
+
+To run the tests:
+
+```npx hardhat test```
 
 ## Improvements
 
